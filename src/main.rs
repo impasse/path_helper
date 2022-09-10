@@ -1,8 +1,37 @@
 use path_helper::read_paths;
+use path_helper::mode::Mode;
+use clap::Parser;
+use clap::ArgGroup;
+
+#[derive(Parser, Debug)]
+#[clap(author, about, long_about = None)]
+#[clap(group(
+  ArgGroup::new("mode")
+      .required(true)
+      .args(&["s", "c"]),
+))]
+pub struct Args {
+  /// csh
+   #[clap(short, action)]
+   c: bool,
+
+   /// bash
+   #[clap(short, action)]
+   s: bool,
+}
 
 fn main() {
-    match read_paths() {
-        Err(e) => eprintln!("{:?}", e),
-        Ok(cmd) => println!("{}", cmd)
-    }
+  let args = Args::parse();
+  let mode = if args.c {
+    Mode::CSH
+  } else {
+    Mode::BASH
+  };
+  match read_paths(&mode) {
+      Err(e) => {
+        eprintln!("{:?}", e);
+        std::process::exit(1)
+      },
+      Ok(cmd) => println!("{}", cmd),
+  }
 }
