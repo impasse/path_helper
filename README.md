@@ -16,6 +16,6 @@
 - git clone this repo
 - cargo build --release
 - cp target/release/path_helper /usr/local/bin/
-- replace /usr/libexec/path_helper to /usr/local/bin/path_helper in /etc/zprofile
+- replace `/usr/libexec/path_helper` to `/usr/local/bin/path_helper` in /etc/zprofile
 - reopen terminal window
 
