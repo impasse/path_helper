@@ -6,7 +6,7 @@ pub trait RichVec<T> {
 
     fn extend_if_not_exists<I: IntoIterator<Item = T>>(&mut self, i: I);
 
-    fn dedup(self) -> Vec<T>;
+    fn dedup_ordered(self) -> Vec<T>;
 }
 
 impl<T: PartialEq> RichVec<T> for Vec<T> {
@@ -25,7 +25,7 @@ impl<T: PartialEq> RichVec<T> for Vec<T> {
         })
     }
     
-    fn dedup(self) -> Vec<T> {
+    fn dedup_ordered(self) -> Vec<T> {
         let mut copy: Vec<T> = Vec::with_capacity(self.len());
         copy.extend_if_not_exists(self);
         copy

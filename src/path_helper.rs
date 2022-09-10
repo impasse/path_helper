@@ -75,7 +75,7 @@ pub fn read_paths(mode: &Mode) -> Result<String> {
         .collect();
 
     let string_list: Vec<String> = expanded
-        .dedup()
+        .dedup_ordered()
         .iter()
         .map(|p| p.to_string_lossy().to_string())
         .collect();
