@@ -60,8 +60,14 @@ pub fn read_paths(mode: &Mode) -> Result<String> {
 
     path_vec.extend_if_not_exists(read_env());
 
+    let replaced = path_vec
+        .iter()
+        .flat_map(|p| shellexpand::full(p).ok())
+        .map(|p| p.to_string())
+        .collect::<Vec<String>>();
+
     match mode {
-        Mode::CSH => Ok(format!("setenv PATH \"{}\";", path_vec.join(":"))),
-        _ => Ok(format!("PATH=\"{}\"; export PATH;", path_vec.join(":"))),
+        Mode::CSH => Ok(format!("setenv PATH \"{}\";", replaced.join(":"))),
+        _ => Ok(format!("PATH=\"{}\"; export PATH;", replaced.join(":"))),
     }
 }

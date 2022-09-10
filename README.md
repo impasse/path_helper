@@ -12,6 +12,8 @@
 
 同时增加了排序。
 
+支持 ${ENV} 环境变量替换以及 ~ 的替换。
+
 ### 安装
 - git clone this repo
 - cargo build --release
