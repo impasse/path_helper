@@ -1,12 +1,13 @@
-use crate::constant::*;
-use crate::mode::Mode;
-use crate::rich_vec::*;
 use std::env;
 use std::fs;
 use std::io::Result;
 use std::path::Path;
 use std::path::PathBuf;
 use std::vec::*;
+
+use crate::constant::*;
+use crate::mode::Mode;
+use crate::rich_vec::*;
 
 fn read_single_file<P: AsRef<Path>>(path: P) -> Vec<String> {
     let body = fs::read_to_string(path);

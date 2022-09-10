@@ -1,7 +1,8 @@
-use path_helper::read_paths;
-use path_helper::mode::Mode;
-use clap::Parser;
 use clap::ArgGroup;
+use clap::Parser;
+
+use path_helper::mode::Mode;
+use path_helper::read_paths;
 
 #[derive(Parser, Debug)]
 #[clap(author, about, long_about = None)]
