@@ -3,24 +3,21 @@ use crate::mode::Mode;
 use crate::rich_vec::*;
 use std::env;
 use std::fs;
-use std::fs::read_dir;
 use std::io::Result;
+use std::path::Path;
+use std::path::PathBuf;
 use std::vec::*;
 
-fn read_single_file<T: Into<String>>(path: T) -> Vec<String> {
-    let body = fs::read_to_string(path.into());
+fn read_single_file<P: AsRef<Path>>(path: P) -> Vec<String> {
+    let body = fs::read_to_string(path);
     match body {
         Err(_) => Vec::new(),
-        Ok(body) => {
-            let mut vec: Vec<String> = Vec::new();
-            for line in body.lines() {
-                let trimed = line.trim();
-                if !trimed.is_empty() {
-                    vec.push(trimed.to_string())
-                }
-            }
-            vec
-        }
+        Ok(body) => body
+            .lines()
+            .map(|l| l.trim())
+            .filter(|l| !l.is_empty())
+            .map(|l| l.to_string())
+            .collect::<Vec<String>>(),
     }
 }
 
@@ -35,39 +32,56 @@ pub fn read_env() -> Vec<String> {
 }
 
 pub fn read_paths(mode: &Mode) -> Result<String> {
-    let (mut p, mut s): (Vec<String>, Vec<String>) = read_dir(DIR_PATH)?
-        .flat_map(|p| p.ok())
-        .flat_map(|p| p.file_name().to_os_string().into_string().ok())
-        .partition(|file_name| file_name.starts_with("0"));
+    let mut prelude: Vec<PathBuf> = Vec::new();
+    let mut successor: Vec<PathBuf> = Vec::new();
 
-    p.sort();
+    if let Ok(dir) = fs::read_dir(DIR_PATH) {
+        dir.flat_map(|e| e.ok()).for_each(|e| {
+            let path = e.path();
+            if e.file_name()
+                .to_str()
+                .map(|s| s.starts_with("0"))
+                .unwrap_or(false)
+            {
+                prelude.push_if_not_exists(path);
+            } else {
+                successor.push_if_not_exists(path);
+            }
+        })
+    }
 
-    s.sort();
+    prelude.sort();
 
-    let mut file_list: Vec<String> = Vec::new();
+    successor.sort();
 
-    let prefix = format!("{}/", DIR_PATH).to_string();
+    let mut file_list: Vec<PathBuf> = Vec::new();
 
-    file_list.extend_with_prefix(p, &prefix);
-    file_list.push(DEFAULT_PATH.to_string());
-    file_list.extend_with_prefix(s, &prefix);
+    file_list.extend_if_not_exists(prelude);
+    file_list.push(PathBuf::from(DEFAULT_PATH));
+    file_list.extend_if_not_exists(successor);
 
-    let mut path_vec: Vec<String> = Vec::new();
-
-    file_list
-        .into_iter()
-        .for_each(|i| path_vec.extend_if_not_exists(read_single_file(i)));
-
-    path_vec.extend_if_not_exists(read_env());
-
-    let replaced = path_vec
+    let mut paths: Vec<String> = file_list
         .iter()
-        .flat_map(|p| shellexpand::full(p).ok())
-        .map(|p| p.to_string())
-        .collect::<Vec<String>>();
+        .flat_map(|f| read_single_file(f))
+        .collect();
+
+    paths.extend_if_not_exists(read_env());
+
+    let expanded: Vec<PathBuf> = paths
+        .iter()
+        .flat_map(|p| shellexpand::full(p))
+        .map(|p| PathBuf::from(p.as_ref()))
+        .filter(|pb| pb.is_dir())
+        .collect();
+
+    let string_list: Vec<String> = expanded
+        .dedup()
+        .iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .collect();
 
     match mode {
-        Mode::CSH => Ok(format!("setenv PATH \"{}\";", replaced.join(":"))),
-        _ => Ok(format!("PATH=\"{}\"; export PATH;", replaced.join(":"))),
+        Mode::CSH => Ok(format!("setenv PATH \"{}\";", string_list.join(":"))),
+        _ => Ok(format!("PATH=\"{}\"; export PATH;", string_list.join(":"))),
     }
 }
