@@ -9,3 +9,7 @@ authors = ["yooyi(i@uuz.io)"]
 [dependencies]
 clap = { version = "3.2.20", features = ["derive"] }
 shellexpand = "2.1"
+
+[profile.release]
+lto = true
+strip = "symbols"
